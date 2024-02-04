@@ -33,10 +33,10 @@ namespace LaserGRBL
 			MnOrtur.Visible = false;
 			MMn.Renderer = new MMnRenderer();
 
-            
+
 			splitContainer1.FixedPanel = FixedPanel.Panel1;
             splitContainer1.SplitterDistance = Settings.GetObject("MainForm Splitter Position", 260);
-            
+
 			MnNotifyNewVersion.Checked = Settings.GetObject("Auto Update", true);
 			MnNotifyMinorVersion.Checked = Settings.GetObject("Auto Update Build", false);
 			MnNotifyPreRelease.Checked = Settings.GetObject("Auto Update Pre", false);
@@ -136,15 +136,30 @@ namespace LaserGRBL
 				else if (available != null)
 					NewVersionForm.CreateAndShowDialog(current, available, this);
 				else
-					MessageBox.Show(this, "You have the most updated version!", "Software info", MessageBoxButtons.OK, MessageBoxIcon.Information, MessageBoxDefaultButton.Button1); 
-			
+					MessageBox.Show(this, "You have the most updated version!", "Software info", MessageBoxButtons.OK, MessageBoxIcon.Information, MessageBoxDefaultButton.Button1);
+
 			}
 		}
 
 		private void MainForm_Load(object sender, EventArgs e)
 		{
-			UpdateTimer.Enabled = true;
+			bool canrun = Settings.GetObject("IsDisclamerAccepted", false);
+			if (!canrun)
+			{
+				using (LegalDisclaimer lds = new LegalDisclaimer())
+				{
+					lds.ShowDialog();
+					if (lds.accepted)
+					{
+						canrun = true;
+						Settings.SetObject("IsDisclamerAccepted", true);
+					}
+				}
+			}
 
+			if (canrun)
+			{
+			UpdateTimer.Enabled = true;
 
 			if (Settings.GetObject("Auto Update", true))
 				GitHub.CheckVersion(false);
@@ -159,6 +174,11 @@ namespace LaserGRBL
 
 			ManageMessage();
 			ManageCommandLineArgs(args);
+		}
+			else
+			{
+				Close();
+			}
 		}
 
 		private void ManageCommandLineArgs(string[] args)
@@ -204,7 +224,7 @@ namespace LaserGRBL
 					this.TTLinkToNews.LinkBehavior = System.Windows.Forms.LinkBehavior.HoverUnderline;
 				}
 			}
-			catch (Exception ex){ System.Diagnostics.Debug.WriteLine(ex); }
+			catch (Exception ex) { System.Diagnostics.Debug.WriteLine(ex); }
 		}
 
 		void OnFileLoaded(long elapsed, string filename)
@@ -224,9 +244,11 @@ namespace LaserGRBL
 		}
 
 
+		bool PrevConnected = false;
 		void OnMachineStatus()
 		{
 			TimerUpdate();
+
 			if (Core.MachineStatus == GrblCore.MacStatus.Disconnected && Core.FailedConnectionCount >= 3)
 			{
 				string url = null;
@@ -240,6 +262,18 @@ namespace LaserGRBL
 				if (url != null)
 					MessageBox.Show(this, Strings.ProblemConnectingText, Strings.ProblemConnectingTitle, MessageBoxButtons.OK, MessageBoxIcon.Information, MessageBoxDefaultButton.Button1, 0, url);
 			}
+
+			if (Core.IsConnected && !PrevConnected)
+			{
+				LaserLifeHandler.OnConnect(this);
+		}
+			if (!Core.IsConnected && PrevConnected)
+			{
+				LaserLifeHandler.OnDisconnect();
+			}
+
+			PrevConnected = Core.IsConnected;
+
 		}
 		void MainFormFormClosing(object sender, FormClosingEventArgs e)
 		{
@@ -249,7 +283,7 @@ namespace LaserGRBL
 			if (!e.Cancel)
 			{
 				SincroStart.StopListen();
-				Core.CloseCom(true);
+				Core.Exiting();
 				Settings.SetObject("Mainform Size and Position", new object[] { Size, Location, WindowState });
                 Settings.Exiting();
 
@@ -260,6 +294,7 @@ namespace LaserGRBL
 
 		private void UpdateTimer_Tick(object sender, EventArgs e)
 		{
+			long foo = HiResTimer.TotalNano; //ensure call TotalNano to be able to detect and fix sleep/hibernation
 			TimerUpdate();
 			ConnectionForm.TimerUpdate();
 			PreviewForm.TimerUpdate();
@@ -278,7 +313,7 @@ namespace LaserGRBL
 					if (F.ShowDialog(this) == DialogResult.OK)
 						ShowWiFiConfig();
 				}
-				
+
 			}
 		}
 
@@ -292,7 +327,7 @@ namespace LaserGRBL
 					Settings.SetObject("ComWrapper Protocol", ComWrapper.WrapperType.Telnet);
 					Core.CloseCom(true);
 				}
-				
+
 			}
 		}
 
@@ -381,8 +416,11 @@ namespace LaserGRBL
 				PbBuffer.ProgressBar.SetState(stuck ? 2 : 1);
 				BtnUnlockFromStuck.Enabled = stuck;
 			}
-			
+
 			MnOrtur.Visible = Core.IsOrturBoard;
+
+			string NewTTLLText = $"{LaserLifeHandler.GetCurrentTime().TotalHours.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture)}h";
+			if (TTlaserLife.Text != NewTTLLText) TTlaserLife.Text = NewTTLLText; //prevent tooltip flickering
 
 			ResumeLayout();
 		}
@@ -604,7 +642,7 @@ namespace LaserGRBL
 
 		private void MNGrblEmulator_Click(object sender, EventArgs e)
 		{
-			LaserGRBL.GrblEmulator.WebSocketEmulator.Start();
+			GrblEmulator.WebSocketEmulator.Start();
 		}
 
 		private void blueLaserToolStripMenuItem_Click(object sender, EventArgs e)
@@ -759,7 +797,7 @@ namespace LaserGRBL
 					sfd.FileName = "comlog.txt";
 					sfd.Title = "Select extended log filename";
 
-					System.Windows.Forms.DialogResult dialogResult = System.Windows.Forms.DialogResult.Cancel;
+					DialogResult dialogResult = DialogResult.Cancel;
 					try
 					{
 						dialogResult = sfd.ShowDialog(this);
@@ -771,12 +809,16 @@ namespace LaserGRBL
 					}
 
 					if (dialogResult == DialogResult.OK && sfd.FileName != null)
-						ComWrapper.ComLogger.StartLog(sfd.FileName);
+					{
+						string message = ComWrapper.ComLogger.StartLog(sfd.FileName);
+						Logger.LogMessage("ComLog", message);
 				}
+			}
 			}
 			else
 			{
-				ComWrapper.ComLogger.StopLog();
+				string message = ComWrapper.ComLogger.StopLog();
+				if (message != null) Logger.LogMessage("ComLog", message);
 			}
 		}
 
@@ -987,6 +1029,11 @@ namespace LaserGRBL
 			SetLanguage(new System.Globalization.CultureInfo("nl-NL"));
 		}
 
+		private void ukrainianToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+			SetLanguage(new System.Globalization.CultureInfo("uk"));
+		}
+
 		private void TTTStatus_DoubleClick(object sender, EventArgs e)
 		{
 			Tools.Utils.OpenLink(@"https://lasergrbl.com/usage/machine-status/");
@@ -997,8 +1044,16 @@ namespace LaserGRBL
 			ShowWiFiConfig();
 		}
 
-        
-    }
+		private void TTlaserLife_Click(object sender, EventArgs e)
+		{
+			LaserUsage.CreateAndShowDialog(this, Core);
+		}
+
+		private void laserUsageStatsToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+			LaserUsage.CreateAndShowDialog(this, Core);
+		}
+	}
 
 
     public class MMnRenderer : ToolStripProfessionalRenderer
@@ -1049,7 +1104,6 @@ namespace LaserGRBL
 			using (Brush b = new SolidBrush(ColorScheme.FormBackColor))
 				e.Graphics.FillRectangle(b, e.ConnectedArea);
 		}
-
 	}
 	public class CustomMenuColor : ProfessionalColorTable
 	{

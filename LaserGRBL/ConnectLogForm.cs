@@ -199,6 +199,7 @@ namespace LaserGRBL
 
 		void BtnRunProgramClick(object sender, EventArgs e)
 		{
+			BtnRunProgram.Enabled = false;
 			Core.RunProgram(ParentForm);
 		}
 		void TxtManualCommandCommandEntered(string command)
@@ -227,8 +228,6 @@ namespace LaserGRBL
 				PB.PercString = "";
 			
 			PB.Invalidate();
-
-
 
 			/*
 			Idle: All systems are go, no motions queued, and it's ready for anything.

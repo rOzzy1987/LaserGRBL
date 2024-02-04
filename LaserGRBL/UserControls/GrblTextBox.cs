@@ -64,6 +64,7 @@ namespace LaserGRBL.UserControls
 				
 				return true;
 			}
+
 			if (keyData == Keys.Down)
 			{
 				if (mHistoryIndex < mCommandHistory.Count)
@@ -77,6 +78,13 @@ namespace LaserGRBL.UserControls
 				}
 				
 				return true;
+			}
+
+			if (keyData == Keys.Escape)
+			{
+			    Clear();
+				
+			    return true;
 			}
 
 			return base.ProcessCmdKey(ref m, keyData);

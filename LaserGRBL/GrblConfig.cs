@@ -80,30 +80,35 @@ namespace LaserGRBL
 
 		private void BtnRead_Click(object sender, EventArgs e)
 		{
+			DoRead(GrblCore.RefreshCause.OnRead);
+
+		}
+
+		private void DoRead(GrblCore.RefreshCause cause)
+		{
 			try
 			{
 				Cursor = Cursors.WaitCursor;
-				Core.RefreshConfig();
+				Core.RefreshConfig(cause);
 				mLocalCopy = GrblCore.Configuration.ToList();
 				DGV.DataSource = mLocalCopy;
 				RefreshEnabledButtons();
 				Cursor = DefaultCursor;
 
-				ActionResult( String.Format(Strings.BoxReadConfigSuccess, mLocalCopy.Count));
+				ActionResult(String.Format(Strings.BoxReadConfigSuccess, mLocalCopy.Count));
 			}
 			catch (Exception ex)
 			{
 				Cursor = DefaultCursor;
-				ActionResult(Strings.BoxReadConfigError);
+				ActionResult($"{Strings.BoxReadConfigError} {ex.Message}");
 			}
-
 		}
 
 		private void BtnWrite_Click(object sender, EventArgs e)
 		{
 			try
 			{
-				Core.RefreshConfig();
+				Core.RefreshConfig(GrblCore.RefreshCause.OnWriteBegin);
 				List<GrblConfST.GrblConfParam> changes = GetChanges(); //get changes
 
 				if (changes.Count > 0)
@@ -139,7 +144,7 @@ namespace LaserGRBL
 			}
 			finally
 			{
-				try { Core.RefreshConfig(); } //ensure to have the last conf at least in core
+				try { Core.RefreshConfig(GrblCore.RefreshCause.OnWriteEnd); } //ensure to have the last conf at least in core
 				catch { }
 			}
 
@@ -173,27 +178,29 @@ namespace LaserGRBL
 
 			if (filename != null)
 			{
-				Core.RefreshConfig(); //internally skipped if not possible
+				try { Core.RefreshConfig(GrblCore.RefreshCause.OnExport); } //internally skipped if not possible
+				catch { }
 
-				List<GrblConfST.GrblConfParam> toexport = GrblCore.Configuration.ToList();
-				if (toexport.Count > 0)
+				try
 				{
-					try
-					{
-						using (System.IO.StreamWriter sw = new System.IO.StreamWriter(filename))
-						{
-							foreach (GrblConfST.GrblConfParam p in toexport)
-								sw.WriteLine(string.Format("${0}={1}", p.Number, p.Value, p.Parameter));
+					List<GrblConfST.GrblConfParam> toexport = GrblCore.Configuration.ToList();
 
-							sw.Close();
-							ActionResult(String.Format(Strings.BoxExportConfigSuccess, toexport.Count));
-						}
-					}
-					catch (Exception ex)
+					if (toexport.Count == 0)
+						throw new Exception("Nothing to export!");
+
+					using (System.IO.StreamWriter sw = new System.IO.StreamWriter(filename))
 					{
-						Logger.LogException("ExportConfig", ex);
-						MessageBox.Show(Strings.BoxExportConfigError, Strings.BoxExportConfigErrorTitle, MessageBoxButtons.OK, MessageBoxIcon.Error);
+						foreach (GrblConfST.GrblConfParam p in toexport)
+							sw.WriteLine(string.Format("${0}={1}", p.Number, p.Value, p.Parameter));
+
+						sw.Close();
+						ActionResult(String.Format(Strings.BoxExportConfigSuccess, toexport.Count));
 					}
+				}
+				catch (Exception ex)
+				{
+					Logger.LogException("ExportConfig", ex);
+					MessageBox.Show(Strings.BoxExportConfigError, Strings.BoxExportConfigErrorTitle, MessageBoxButtons.OK, MessageBoxIcon.Error);
 				}
 
 				RefreshEnabledButtons();
@@ -255,7 +262,7 @@ namespace LaserGRBL
 							WriteConf(conf, true);
 
 						//refresh actual conf
-						Core.RefreshConfig();
+						Core.RefreshConfig(GrblCore.RefreshCause.OnImport);
 						mLocalCopy = GrblCore.Configuration.ToList();
 						DGV.DataSource = mLocalCopy;
 					}
@@ -332,7 +339,7 @@ namespace LaserGRBL
 		private void GrblConfig_Load(object sender, EventArgs e)
 		{
 			if (BtnRead.Enabled)
-				BtnRead.PerformClick();
+				DoRead(GrblCore.RefreshCause.OnDialog);
 			else
 				ActionResult(Strings.BoxReadConfigPleaseConnect);
 		}

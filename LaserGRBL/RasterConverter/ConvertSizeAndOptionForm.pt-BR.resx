@@ -130,7 +130,7 @@
     <value>Cancelar</value>
   </data>
   <data name="LblLinearFilling.Text" xml:space="preserve">
-    <value>Velocidade de gravação</value>
+    <value>Velocidade de preenchimento</value>
   </data>
   <data name="BtnCreate.Text" xml:space="preserve">
     <value>Criar!</value>
@@ -170,5 +170,44 @@ Clique aqui para obter mais informações...</value>
   </data>
   <data name="GbLaser.Text" xml:space="preserve">
     <value>Opções do Laser</value>
+  </data>
+  <data name="BtnUnlockProportion.ToolTip" xml:space="preserve">
+    <value>Bloquear/Desbloquear a proporção da imagem</value>
+  </data>
+  <data name="label1.Text" xml:space="preserve">
+    <value>DPI</value>
+  </data>
+  <data name="CbAutosize.Text" xml:space="preserve">
+    <value>Tamanho automático</value>
+  </data>
+  <data name="BtnDPI.ToolTip" xml:space="preserve">
+    <value>Carregar DPI da informação Exif</value>
+  </data>
+  <data name="BtnCenter.ToolTip" xml:space="preserve">
+    <value>Centraliza a imagem vertical e horizontal (zero no centro)</value>
+  </data>
+  <data name="LblLinearFillingmm.Text" xml:space="preserve">
+    <value>mm/min</value>
+  </data>
+  <data name="BtnPSHelper.ToolTip" xml:space="preserve">
+    <value>Abrir banco de Laser &amp; Materiais</value>
+  </data>
+  <data name="LblSmin.Text" xml:space="preserve">
+    <value>S-MIN</value>
+  </data>
+  <data name="LblLaserMode.Text" xml:space="preserve">
+    <value>Modo Laser</value>
+  </data>
+  <data name="LblSmax.Text" xml:space="preserve">
+    <value>S-MAX</value>
+  </data>
+  <data name="LblMinPerc.Text" xml:space="preserve">
+    <value>0%</value>
+  </data>
+  <data name="LblMaxPerc.Text" xml:space="preserve">
+    <value>100%</value>
+  </data>
+  <data name="$this.Text" xml:space="preserve">
+    <value>Imagem alvo</value>
   </data>
 </root>

@@ -121,7 +121,7 @@
     <value>Conectar</value>
   </data>
   <data name="UDLoopCounter.ToolTip" xml:space="preserve">
-    <value>Realizar múltiples pases</value>
+    <value>Realizar passos múltiplos</value>
   </data>
   <data name="LblFilename.Text" xml:space="preserve">
     <value>Nome do arquivo</value>
@@ -148,6 +148,15 @@
     <value>URL</value>
   </data>
   <data name="TxtEmulator.Text" xml:space="preserve">
-    <value>Emulated Grbl v1.1#</value>
+    <value>Grbl v1.1 Emulado#</value>
+  </data>
+  <data name="LblEmulator.Text" xml:space="preserve">
+    <value>Emulador</value>
+  </data>
+  <data name="BtnAbortProgram.ToolTip" xml:space="preserve">
+    <value>Abortar Programa</value>
+  </data>
+  <data name="TxtManualCommand.WaterMark" xml:space="preserve">
+    <value>digite o gcode aqui</value>
   </data>
 </root>

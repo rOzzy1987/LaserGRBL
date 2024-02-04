@@ -215,11 +215,15 @@ namespace Tools
 						ComputeFrequency(now);
 
 					TimeReference delta = now.Subtract(mLastReference);
+					long deltaNano = delta.IsGoodHiRes() ? delta.HiResNano : delta.LowResNano;
+					long nanoSleepThreshold = 10000000000L; // se passano più di 10s tra due chiamate abbiamo avuto una sleep da non conteggiare! (assicurati di chiamare TotalNano con una frequenza più alta)
 
-					if (delta.IsGoodHiRes())
-						mTotalNano = mTotalNano + Math.Max(0, delta.HiResNano);
+					if (deltaNano < 0)
+						LaserGRBL.Logger.LogMessage("Issue detector", "Negative delta detected!");
+					else if (deltaNano > nanoSleepThreshold)
+						LaserGRBL.Logger.LogMessage("Issue detector", "System sleep/hibernation detected ({0}s)", deltaNano / 1000000000L);
 					else
-						mTotalNano = mTotalNano + Math.Max(0, delta.LowResNano);
+						mTotalNano += deltaNano;
 
 					mLastReference = now;
 
@@ -434,7 +438,28 @@ namespace Tools
 			if (functionReturnValue == null || string.IsNullOrEmpty(functionReturnValue))
 			{
 				if (WriteSuffix)
+				{
 					functionReturnValue = S_now;
+				}
+				else // write zero + precision
+				{
+					if (Precision == TimePrecision.Years)
+						functionReturnValue = string.Format("0 {0}", S_years);
+					if (Precision == TimePrecision.Month)
+						functionReturnValue = string.Format("0 {0}", S_months);
+					if (Precision == TimePrecision.Day)
+						functionReturnValue = string.Format("0 {0}", S_days);
+					if (Precision == TimePrecision.Hour)
+						functionReturnValue = string.Format("0 {0}", S_hours);
+					if (Precision == TimePrecision.Minute)
+						functionReturnValue = string.Format("0 {0}", S_minutes);
+					if (Precision == TimePrecision.Second)
+						functionReturnValue = string.Format("0 {0}", S_seconds);
+					if (Precision == TimePrecision.Millisecond)
+						functionReturnValue = string.Format("0 {0}", S_milliseconds);
+
+
+				}
 			}
 			else
 			{
@@ -447,6 +472,7 @@ namespace Tools
 						functionReturnValue = functionReturnValue + " " + S_ago;
 				}
 			}
+
 			return functionReturnValue;
 		}
 
